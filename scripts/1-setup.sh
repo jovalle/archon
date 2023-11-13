@@ -2,32 +2,32 @@
 #github-action genshdoc
 #
 # @file Setup
-# @brief Configures installed system, installs base packages, and creates user. 
+# @brief Configures installed system, installs base packages, and creates user.
 set -e
 echo -ne "
 -------------------------------------------------------------------------
-   █████╗ ██████╗  ██████╗██╗  ██╗████████╗██╗████████╗██╗   ██╗███████╗
-  ██╔══██╗██╔══██╗██╔════╝██║  ██║╚══██╔══╝██║╚══██╔══╝██║   ██║██╔════╝
-  ███████║██████╔╝██║     ███████║   ██║   ██║   ██║   ██║   ██║███████╗
-  ██╔══██║██╔══██╗██║     ██╔══██║   ██║   ██║   ██║   ██║   ██║╚════██║
-  ██║  ██║██║  ██║╚██████╗██║  ██║   ██║   ██║   ██║   ╚██████╔╝███████║
-  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝   ╚═╝   ╚═╝   ╚═╝    ╚═════╝ ╚══════╝
+           █████╗ ██████╗  ██████╗██╗  ██╗ ██████╗ ███╗   ██╗
+          ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔═══██╗████╗  ██║
+          ███████║██████╔╝██║     ███████║██║   ██║██╔██╗ ██║
+          ██╔══██║██╔══██╗██║     ██╔══██║██║   ██║██║╚██╗██║
+          ██║  ██║██║  ██║╚██████╗██║  ██║╚██████╔╝██║ ╚████║
+          ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
 -------------------------------------------------------------------------
                     Automated Arch Linux Installer
-                        SCRIPTHOME: ArchTitus
+                        SCRIPTHOME: archon
 -------------------------------------------------------------------------
 "
-source $HOME/ArchTitus/configs/setup.conf
+source $HOME/archon/configs/setup.conf
 echo -ne "
 -------------------------------------------------------------------------
-                    Network Setup 
+                    Network Setup
 -------------------------------------------------------------------------
 "
 pacman -S --noconfirm --needed networkmanager dhclient
 systemctl enable --now NetworkManager
 echo -ne "
 -------------------------------------------------------------------------
-                    Setting up mirrors for optimal download 
+                    Setting up mirrors for optimal download
 -------------------------------------------------------------------------
 "
 pacman -S --noconfirm --needed pacman-contrib curl
@@ -49,7 +49,7 @@ sed -i "s/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -T $nc -z -)/g" /etc/makepkg
 fi
 echo -ne "
 -------------------------------------------------------------------------
-                    Setup Language to US and set locale  
+                    Setup Language to US and set locale
 -------------------------------------------------------------------------
 "
 sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
@@ -74,13 +74,13 @@ pacman -Sy --noconfirm --needed
 
 echo -ne "
 -------------------------------------------------------------------------
-                    Installing Base System  
+                    Installing Base System
 -------------------------------------------------------------------------
 "
 # sed $INSTALL_TYPE is using install type to check for MINIMAL installation, if it's true, stop
 # stop the script and move on, not installing any more packages below that line
 if [[ ! $DESKTOP_ENV == server ]]; then
-  sed -n '/'$INSTALL_TYPE'/q;p' $HOME/ArchTitus/pkg-files/pacman-pkgs.txt | while read line
+  sed -n '/'$INSTALL_TYPE'/q;p' $HOME/archon/pkg-files/pacman-pkgs.txt | while read line
   do
     if [[ ${line} == '--END OF MINIMAL INSTALL--' ]]; then
       # If selected installation type is FULL, skip the --END OF THE MINIMAL INSTALLATION-- line
@@ -123,44 +123,44 @@ elif grep -E "Integrated Graphics Controller|Intel Corporation UHD" <<< ${gpu_ty
     pacman -S --noconfirm --needed libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-intel-driver libva-utils lib32-mesa
 fi
 #SETUP IS WRONG THIS IS RUN
-if ! source $HOME/ArchTitus/configs/setup.conf; then
+if ! source $HOME/archon/configs/setup.conf; then
 	# Loop through user input until the user gives a valid username
 	while true
-	do 
+	do
 		read -p "Please enter username:" username
 		# username regex per response here https://unix.stackexchange.com/questions/157426/what-is-the-regex-to-validate-linux-users
 		# lowercase the username to test regex
 		if [[ "${username,,}" =~ ^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\$)$ ]]
-		then 
+		then
 			break
-		fi 
+		fi
 		echo "Incorrect username."
-	done 
+	done
 # convert name to lowercase before saving to setup.conf
-echo "username=${username,,}" >> ${HOME}/ArchTitus/configs/setup.conf
+echo "username=${username,,}" >> ${HOME}/archon/configs/setup.conf
 
     #Set Password
     read -p "Please enter password:" password
-echo "password=${password,,}" >> ${HOME}/ArchTitus/configs/setup.conf
+echo "password=${password,,}" >> ${HOME}/archon/configs/setup.conf
 
-    # Loop through user input until the user gives a valid hostname, but allow the user to force save 
+    # Loop through user input until the user gives a valid hostname, but allow the user to force save
 	while true
-	do 
+	do
 		read -p "Please name your machine:" name_of_machine
 		# hostname regex (!!couldn't find spec for computer name!!)
 		if [[ "${name_of_machine,,}" =~ ^[a-z][a-z0-9_.-]{0,62}[a-z0-9]$ ]]
-		then 
-			break 
-		fi 
+		then
+			break
+		fi
 		# if validation fails allow the user to force saving of the hostname
-		read -p "Hostname doesn't seem correct. Do you still want to save it? (y/n)" force 
+		read -p "Hostname doesn't seem correct. Do you still want to save it? (y/n)" force
 		if [[ "${force,,}" = "y" ]]
-		then 
-			break 
-		fi 
-	done 
+		then
+			break
+		fi
+	done
 
-    echo "NAME_OF_MACHINE=${name_of_machine,,}" >> ${HOME}/ArchTitus/configs/setup.conf
+    echo "NAME_OF_MACHINE=${name_of_machine,,}" >> ${HOME}/archon/configs/setup.conf
 fi
 echo -ne "
 -------------------------------------------------------------------------
@@ -169,16 +169,16 @@ echo -ne "
 "
 if [ $(whoami) = "root"  ]; then
     groupadd libvirt
-    useradd -m -G wheel,libvirt -s /bin/bash $USERNAME 
+    useradd -m -G wheel,libvirt -s /bin/bash $USERNAME
     echo "$USERNAME created, home directory created, added to wheel and libvirt group, default shell set to /bin/bash"
 
 # use chpasswd to enter $USERNAME:$password
     echo "$USERNAME:$PASSWORD" | chpasswd
     echo "$USERNAME password set"
 
-	cp -R $HOME/ArchTitus /home/$USERNAME/
-    chown -R $USERNAME: /home/$USERNAME/ArchTitus
-    echo "ArchTitus copied to home directory"
+	cp -R $HOME/archon /home/$USERNAME/
+    chown -R $USERNAME: /home/$USERNAME/archon
+    echo "archon copied to home directory"
 
 # enter $NAME_OF_MACHINE to /etc/hostname
 	echo $NAME_OF_MACHINE > /etc/hostname
