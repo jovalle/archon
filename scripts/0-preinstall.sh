@@ -11,6 +11,7 @@
 #
 # @file Preinstall
 # @brief Contains the steps necessary to configure and pacstrap the install to selected drive. 
+set -e
 echo -ne "
 -------------------------------------------------------------------------
    █████╗ ██████╗  ██████╗██╗  ██╗████████╗██╗████████╗██╗   ██╗███████╗
@@ -26,7 +27,7 @@ echo -ne "
 Setting up mirrors for optimal download
 "
 source $CONFIGS_DIR/setup.conf
-iso=$(curl -4 ifconfig.co/country-iso)
+iso=$(lynx -dump ifconfig.co/country-iso)
 timedatectl set-ntp true
 pacman -S --noconfirm archlinux-keyring #update keyrings to latest to prevent packages failing to install
 pacman -S --noconfirm --needed pacman-contrib terminus-font
@@ -40,7 +41,7 @@ echo -ne "
 -------------------------------------------------------------------------
 "
 reflector -a 48 -c $iso -f 5 -l 20 --sort rate --save /etc/pacman.d/mirrorlist
-mkdir /mnt &>/dev/null # Hiding error message if any
+[[ -d /mnt ]] || mkdir /mnt
 echo -ne "
 -------------------------------------------------------------------------
                     Installing Prerequisites
@@ -52,7 +53,9 @@ echo -ne "
                     Formating Disk
 -------------------------------------------------------------------------
 "
-umount -A --recursive /mnt # make sure everything is unmounted before we start
+if ! grep -qs '/mnt' /proc/mounts; then
+    umount -A --recursive /mnt || true # make sure everything is unmounted before we start
+fi
 # disk prep
 sgdisk -Z ${DISK} # zap all on disk
 sgdisk -a 2048 -o ${DISK} # new gpt disk 2048 alignment
@@ -140,7 +143,7 @@ mkdir -p /mnt/boot/efi
 mount -t vfat -L EFIBOOT /mnt/boot/
 
 if ! grep -qs '/mnt' /proc/mounts; then
-    echo "Drive is not mounted can not continue"
+    echo "Drive is not mounted cannot continue"
     echo "Rebooting in 3 Seconds ..." && sleep 1
     echo "Rebooting in 2 Seconds ..." && sleep 1
     echo "Rebooting in 1 Second ..." && sleep 1
@@ -151,11 +154,15 @@ echo -ne "
                     Arch Install on Main Drive
 -------------------------------------------------------------------------
 "
+echo "pacstrapping /mnt"
 pacstrap /mnt base base-devel linux linux-firmware vim nano sudo archlinux-keyring wget libnewt --noconfirm --needed
 echo "keyserver hkp://keyserver.ubuntu.com" >> /mnt/etc/pacman.d/gnupg/gpg.conf
+echo "Copying script dir to /mnt/root/ArchTitus"
 cp -R ${SCRIPT_DIR} /mnt/root/ArchTitus
+echo "Copying mirror list to target drive"
 cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
 
+echo "Generating fstab"
 genfstab -L /mnt >> /mnt/etc/fstab
 echo " 
   Generated /etc/fstab:
@@ -167,8 +174,10 @@ echo -ne "
 -------------------------------------------------------------------------
 "
 if [[ ! -d "/sys/firmware/efi" ]]; then
+    echo "Installing grub at /mnt/boot"
     grub-install --boot-directory=/mnt/boot ${DISK}
 else
+    echo "Pacstrapping at /mnt with efibootmgr"
     pacstrap /mnt efibootmgr --noconfirm --needed
 fi
 echo -ne "
@@ -194,3 +203,4 @@ echo -ne "
                     SYSTEM READY FOR 1-setup.sh
 -------------------------------------------------------------------------
 "
+set +e

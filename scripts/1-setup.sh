@@ -3,6 +3,7 @@
 #
 # @file Setup
 # @brief Configures installed system, installs base packages, and creates user. 
+set -e
 echo -ne "
 -------------------------------------------------------------------------
    █████╗ ██████╗  ██████╗██╗  ██╗████████╗██╗████████╗██╗   ██╗███████╗
@@ -118,10 +119,8 @@ if grep -E "NVIDIA|GeForce" <<< ${gpu_type}; then
 	nvidia-xconfig
 elif lspci | grep 'VGA' | grep -E "Radeon|AMD"; then
     pacman -S --noconfirm --needed xf86-video-amdgpu
-elif grep -E "Integrated Graphics Controller" <<< ${gpu_type}; then
+elif grep -E "Integrated Graphics Controller|Intel Corporation UHD" <<< ${gpu_type}; then
     pacman -S --noconfirm --needed libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-intel-driver libva-utils lib32-mesa
-elif grep -E "Intel Corporation UHD" <<< ${gpu_type}; then
-    pacman -S --needed --noconfirm libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-intel-driver libva-utils lib32-mesa
 fi
 #SETUP IS WRONG THIS IS RUN
 if ! source $HOME/ArchTitus/configs/setup.conf; then
@@ -198,3 +197,4 @@ echo -ne "
                     SYSTEM READY FOR 2-user.sh
 -------------------------------------------------------------------------
 "
+set +e
